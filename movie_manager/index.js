@@ -1,5 +1,7 @@
 const express = require('express');
 const mysql = require("mysql");
+const aws = require('aws-sdk');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +13,25 @@ const db = mysql.createConnection({
     database: process.env.MYSQL_DB,
 });
 
+aws.config.update({
+    region: process.env.REGION
+});
+
+const sns = new aws.SNS();
+
 app.use(express.json());
+
+function publishToSNS(message) {
+    const params = {
+        Message: JSON.stringify(message),
+        TopicArn: process.env.SNS_ARN
+    };
+
+    sns.publish(params, (err, data) => {
+        if (err) console.error('Error when publish to SNS:', err);
+        else console.log('Message sended to SNS:', data.MessageId);
+    });
+}
 
 
 app.post('/movies', (req, res) => {
@@ -25,6 +45,8 @@ app.post('/movies', (req, res) => {
             res.status(500).send('Error al insertar la película.');
             return;
         }
+
+        publishToSNS(movieData);
 
         res.status(200).json({ message: 'Película insertada correctamente', insertedId: results.insertId });
     });

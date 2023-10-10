@@ -1,0 +1,9 @@
+node_modules
+.nvmrc
+README.md
+Dockerfile
+docker
+.git
+.aws
+Archive.zip
+.DS_Store
